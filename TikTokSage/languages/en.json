@@ -1,0 +1,51 @@
+{
+  "app": {
+    "title": "TikTokSage",
+    "version": "v{version}",
+    "ready": "Ready"
+  },
+  "buttons": {
+    "download": "Download",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel",
+    "browse": "Browse",
+    "clear": "Clear",
+    "ok": "OK",
+    "apply": "Apply",
+    "close": "Close"
+  },
+  "dialogs": {
+    "error": "Error",
+    "success": "Success",
+    "custom_options": "Custom Options",
+    "settings": "Settings"
+  },
+  "download": {
+    "preparing": "🚀 Preparing your download...",
+    "analyzing": "🔍 Analyzing video...",
+    "downloading": "⬇️ Downloading...",
+    "completed": "✅ Download completed!",
+    "cancelled": "❌ Download cancelled",
+    "ready": "Ready"
+  },
+  "errors": {
+    "empty_url": "Please enter a TikTok URL",
+    "empty_path": "Please select a download path",
+    "invalid_tiktok_url": "Please enter a valid TikTok URL",
+    "tiktokapi_not_installed": "TikTokApi is not installed",
+    "could_not_fetch_video_info": "Could not fetch video information",
+    "rate_limit": "Rate limited by TikTok API",
+    "unauthorized": "Unauthorized access",
+    "forbidden": "Access forbidden",
+    "not_found": "Video not found",
+    "private_video": "Video is private",
+    "age_restricted": "Video is age restricted",
+    "removed_video": "Video has been removed",
+    "unknown_error": "Unknown error occurred"
+  },
+  "language": {
+    "select_language": "Select Language:",
+    "english": "English"
+  }
+}

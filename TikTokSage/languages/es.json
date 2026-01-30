@@ -1,0 +1,51 @@
+{
+  "app": {
+    "title": "TikTokSage",
+    "version": "v{version}",
+    "ready": "Pronto"
+  },
+  "buttons": {
+    "download": "Descargar",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "cancel": "Cancelar",
+    "browse": "Examinar",
+    "clear": "Limpiar",
+    "ok": "Aceptar",
+    "apply": "Aplicar",
+    "close": "Cerrar"
+  },
+  "dialogs": {
+    "error": "Error",
+    "success": "Éxito",
+    "custom_options": "Opciones Personalizadas",
+    "settings": "Configuración"
+  },
+  "download": {
+    "preparing": "🚀 Preparando tu descarga...",
+    "analyzing": "🔍 Analizando video...",
+    "downloading": "⬇️ Descargando...",
+    "completed": "✅ ¡Descarga completada!",
+    "cancelled": "❌ Descarga cancelada",
+    "ready": "Listo"
+  },
+  "errors": {
+    "empty_url": "Por favor, ingresa una URL de TikTok",
+    "empty_path": "Por favor, selecciona una ruta de descarga",
+    "invalid_tiktok_url": "Por favor, ingresa una URL de TikTok válida",
+    "tiktokapi_not_installed": "TikTokApi no está instalado",
+    "could_not_fetch_video_info": "No se pudo obtener la información del video",
+    "rate_limit": "Límite de velocidad excedido",
+    "unauthorized": "Acceso no autorizado",
+    "forbidden": "Acceso prohibido",
+    "not_found": "Video no encontrado",
+    "private_video": "El video es privado",
+    "age_restricted": "Video restringido por edad",
+    "removed_video": "El video ha sido eliminado",
+    "unknown_error": "Ocurrió un error desconocido"
+  },
+  "language": {
+    "select_language": "Seleccionar Idioma:",
+    "spanish": "Español"
+  }
+}
