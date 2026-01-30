@@ -43,6 +43,7 @@ from src.utils.tiktoksage_logger import logger
 from src.utils.tiktoksage_config_manager import ConfigManager
 from src.utils.tiktoksage_localization import LocalizationManager, _
 from src.utils.tiktoksage_history_manager import HistoryManager
+from src.gui.tiktoksage_gui_dialogs import HistoryDialog
 
 
 class TikTokSageApp(QMainWindow):
@@ -192,10 +193,10 @@ class TikTokSageApp(QMainWindow):
         
         main_layout.addLayout(button_layout)
 
-        # History Button
-        history_btn = QPushButton("History")
-        history_btn.clicked.connect(self.show_history)
-        main_layout.addWidget(history_btn)
+        # History Button (hidden)
+        # history_btn = QPushButton("History")
+        # history_btn.clicked.connect(self.show_history)
+        # main_layout.addWidget(history_btn)
 
         main_layout.addStretch()
         central_widget.setLayout(main_layout)
@@ -498,29 +499,8 @@ class TikTokSageApp(QMainWindow):
 
     def show_history(self) -> None:
         """Show download history."""
-        history = HistoryManager.get_all_entries()
-        
-        if not history:
-            msg = QMessageBox(self)
-            msg.setIcon(QMessageBox.Icon.NoIcon)
-            msg.setWindowTitle("History")
-            msg.setText("No download history")
-            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msg.exec()
-            return
-        
-        history_text = "Download History:\n\n"
-        for entry in history[:10]:  # Show last 10
-            history_text += f"• {entry.get('title', 'Unknown')}\n"
-            history_text += f"  URL: {entry.get('url', 'N/A')}\n"
-            history_text += f"  Date: {entry.get('timestamp', 'Unknown')}\n\n"
-        
-        msg = QMessageBox(self)
-        msg.setIcon(QMessageBox.Icon.NoIcon)
-        msg.setWindowTitle("Download History")
-        msg.setText(history_text)
-        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-        msg.exec()
+        dialog = HistoryDialog(self)
+        dialog.exec()
 
     def show_tiktokapi_setup_dialog(self) -> None:
         """Show TikTokApi setup dialog."""
