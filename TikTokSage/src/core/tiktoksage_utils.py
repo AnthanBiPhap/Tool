@@ -175,3 +175,44 @@ def should_check_for_auto_update() -> bool:
         return (current_time - last_check) > (24 * 3600)
     except Exception:
         return False
+
+
+def is_channel_url(url: str) -> bool:
+    """
+    Detect if URL is a TikTok channel/user profile (not a video).
+    
+    Args:
+        url: URL to check
+    
+    Returns:
+        True if it's a channel URL, False if it's a video URL
+    """
+    url = url.strip().rstrip('/')
+    
+    # Check for video URL pattern first
+    # Video URLs have /video/[numbers]
+    if re.search(r'tiktok\.com/@[\w.-]+/video/\d+', url):
+        return False  # It's a video URL
+    
+    # Check for channel URL pattern
+    # Channel URLs just have /@username
+    if re.search(r'tiktok\.com/@[\w.-]+', url):
+        return True  # It's a channel URL
+    
+    return False
+
+
+def extract_channel_name(url: str) -> Optional[str]:
+    """
+    Extract channel name from TikTok URL.
+    
+    Args:
+        url: TikTok channel URL
+    
+    Returns:
+        Channel name without @, or None if invalid
+    """
+    match = re.search(r"tiktok\.com/@([\w.-]+)", url)
+    if match:
+        return match.group(1)
+    return None

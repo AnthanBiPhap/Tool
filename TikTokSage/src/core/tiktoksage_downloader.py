@@ -350,6 +350,7 @@ class VideoInfoThread(QThread):
     video_info_signal = Signal(dict)
     error_signal = Signal(str)
     finished_signal = Signal()
+    progress_signal = Signal(float)  # Emit progress percentage
 
     def __init__(self, url: str, cookie_file: Optional[str] = None) -> None:
         super().__init__()
@@ -361,12 +362,15 @@ class VideoInfoThread(QThread):
         """Fetch video information."""
         try:
             logger.info(f"Fetching video info: {self.url}")
+            self.progress_signal.emit(10)  # Start at 10%
             
             # Try yt-dlp first (more reliable)
             if self._try_ytdlp_video_info():
+                self.progress_signal.emit(100)
                 return
             
             # Fallback to TikTokApi if yt-dlp fails
+            self.progress_signal.emit(50)
             logger.info("yt-dlp video info failed, trying TikTokApi...")
             
             if not check_tiktokapi_installed():
@@ -383,6 +387,7 @@ class VideoInfoThread(QThread):
             finally:
                 loop.close()
             
+            self.progress_signal.emit(100)
             self.finished_signal.emit()
             
         except Exception as e:
