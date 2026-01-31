@@ -4,6 +4,7 @@ TikTokSage Main GUI Application
 Main application window for TikTokSage TikTok video downloader.
 """
 
+import sys
 import threading
 import webbrowser
 from pathlib import Path
@@ -196,12 +197,12 @@ class TikTokSageApp(QMainWindow):
         self.cancel_btn.clicked.connect(self.cancel_download)
         button_layout.addWidget(self.cancel_btn)
         
+        # History Button
+        self.history_btn = QPushButton("Lịch sử tải xuống")
+        self.history_btn.clicked.connect(self.show_history)
+        button_layout.addWidget(self.history_btn)
+        
         main_layout.addLayout(button_layout)
-
-        # History Button (hidden)
-        # history_btn = QPushButton("History")
-        # history_btn.clicked.connect(self.show_history)
-        # main_layout.addWidget(history_btn)
 
         main_layout.addStretch()
         central_widget.setLayout(main_layout)
@@ -522,8 +523,8 @@ class TikTokSageApp(QMainWindow):
             self.current_queue_index += 1
             self.download_next_from_queue()
         else:
-            # Show transient in-app toast (no system icon)
-            self.show_toast(_("download.completed"))
+            # Show completion dialog with more details
+            self.show_download_completion_dialog()
             self.reset_download_controls()
             self.download_queue = []
             self.current_queue_index = 0
@@ -616,6 +617,46 @@ class TikTokSageApp(QMainWindow):
         lbl.move(x, y)
         lbl.setVisible(True)
         QTimer.singleShot(timeout, lambda: lbl.setVisible(False))
+
+    def show_download_completion_dialog(self) -> None:
+        """Show a detailed completion dialog when download finishes."""
+        if not self.video_info:
+            return
+            
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.setWindowTitle("Download Completed!")
+        msg_box.setText("Video downloaded successfully!")
+        
+        # Add detailed information
+        video_title = self.video_info.get("title", "Unknown")
+        video_author = self.video_info.get("author", "Unknown")
+        is_audio_only = self.audio_only_checkbox.isChecked()
+        
+        detailed_text = f"Title: {video_title}\n"
+        detailed_text += f"Author: {video_author}\n"
+        detailed_text += f"Type: {'Audio Only' if is_audio_only else 'Video'}\n"
+        detailed_text += f"Saved to: {self.path_input.text()}"
+        
+        msg_box.setDetailedText(detailed_text)
+        
+        # Add custom buttons
+        open_folder_btn = msg_box.addButton("Open Folder", QMessageBox.ButtonRole.ActionRole)
+        ok_btn = msg_box.addButton("OK", QMessageBox.ButtonRole.AcceptRole)
+        msg_box.setDefaultButton(ok_btn)
+        
+        # Show dialog and handle button clicks
+        result = msg_box.exec()
+        
+        if msg_box.clickedButton() == open_folder_btn:
+            import subprocess
+            import os
+            folder_path = self.path_input.text()
+            if os.path.exists(folder_path):
+                if os.name == 'nt':  # Windows
+                    subprocess.run(['explorer', folder_path])
+                elif os.name == 'posix':  # macOS and Linux
+                    subprocess.run(['open' if sys.platform == 'darwin' else 'xdg-open', folder_path])
 
     @Slot(str)
     def on_download_error(self, error: str) -> None:
