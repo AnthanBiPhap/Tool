@@ -62,7 +62,8 @@ class HistoryEntryWidget(QFrame):
         
         # Thumbnail
         self.thumbnail_label = QLabel()
-        self.thumbnail_label.setFixedSize(320, 240)  # Large thumbnail to prevent image distortion
+        self.thumbnail_label.setMaximumSize(400, 300)  # Max size but not fixed
+        self.thumbnail_label.setMinimumSize(80, 60)   # Min size
         self.thumbnail_label.setStyleSheet("""
             QLabel {
                 border: 1px solid #404040;
@@ -99,9 +100,9 @@ class HistoryEntryWidget(QFrame):
         if "@" in url:
             try:
                 author = url.split("@")[1].split("/")[0]
-                author = f"Kênh: {author}"
+                author = f"Channel: {author}"
             except:
-                author = "Kênh: Unknown"
+                author = "Channel: Unknown"
         author_label = QLabel(author)
         author_label.setStyleSheet("color: #cccccc; font-size: 12px;")
         info_layout.addWidget(author_label)
@@ -112,13 +113,13 @@ class HistoryEntryWidget(QFrame):
             try:
                 # Parse timestamp and format
                 if isinstance(timestamp, str):
-                    date_label = QLabel(f"Tải xuống vào {timestamp}")
+                    date_label = QLabel(f"Downloaded: {timestamp}")
                 else:
-                    date_label = QLabel(f"Tải xuống vào {str(timestamp)}")
+                    date_label = QLabel(f"Downloaded: {str(timestamp)}")
             except:
-                date_label = QLabel("Tải xuống vào Unknown")
+                date_label = QLabel("Downloaded: Unknown")
         else:
-            date_label = QLabel("Tải xuống vào Unknown")
+            date_label = QLabel("Downloaded: Unknown")
         date_label.setStyleSheet("color: #999999; font-size: 11px;")
         info_layout.addWidget(date_label)
         
@@ -141,45 +142,68 @@ class HistoryEntryWidget(QFrame):
         """)
         details_layout.addWidget(type_label)
         
-        # Size (placeholder)
-        size_label = QLabel("Kích thước: N/A")
+        # Size (calculate from file path or metadata)
+        size_text = "Size: N/A"
+        file_path = self.entry.get("file_path", "")
+        
+        # Try to get file size from actual file
+        if file_path and Path(file_path).exists():
+            try:
+                size_bytes = Path(file_path).stat().st_size
+                size_text = f"Size: {self._format_file_size(size_bytes)}"
+            except Exception:
+                pass
+        
+        # Try to get from metadata
+        elif "raw_data" in self.entry and hasattr(self.entry["raw_data"], 'video'):
+            try:
+                # Estimate size from video metadata (rough estimate)
+                duration = getattr(self.entry["raw_data"].video, 'duration', 0)
+                if duration > 0:
+                    # Rough estimate: 1MB per 10 seconds for TikTok videos
+                    estimated_size = duration * 1024 * 1024 / 10
+                    size_text = f"Size: ~{self._format_file_size(estimated_size)}"
+            except Exception:
+                pass
+        
+        size_label = QLabel(size_text)
         size_label.setStyleSheet("color: #888888; font-size: 11px;")
         details_layout.addWidget(size_label)
         
         details_layout.addStretch()
         info_layout.addLayout(details_layout)
         
-        # Menu button in the same line as details
-        details_with_menu_layout = QHBoxLayout()
-        details_with_menu_layout.addLayout(details_layout)
+        # Menu button hidden
+        # self.menu_button = QPushButton("⚙")
+        # self.menu_button.setFixedSize(32, 32)
+        # self.menu_button.setText("⚙")  # Use gear icon - more visible
+        # self.menu_button.setToolTip("Menu Options")  # Add tooltip
+        # self.menu_button.setStyleSheet("""
+        #     QPushButton {
+        #         background-color: #404040;
+        #         border: 1px solid #555555;
+        #         border-radius: 16px;
+        #         color: white;
+        #         font-size: 18px;
+        #         font-weight: bold;
+        #         font-family: "Segoe UI Symbol", "Apple Color Emoji", Arial, sans-serif;
+        #         text-align: center;
+        #         line-height: 32px;
+        #     }
+        #     QPushButton:hover {
+        #         background-color: #4a9eff;
+        #         border-color: #6bb6ff;
+        #         transform: scale(1.05);
+        #     }
+        #     QPushButton:pressed {
+        #         background-color: #ff4444;
+        #         border-color: #ff6666;
+        #     }
+        # """)
+        # self.menu_button.clicked.connect(self.show_menu)
+        # details_with_menu_layout.addWidget(self.menu_button, alignment=Qt.AlignmentFlag.AlignTop)
         
-        self.menu_button = QPushButton("⋮")
-        self.menu_button.setFixedSize(40, 40)
-        self.menu_button.setText("⋮")  # Try Unicode dots
-        self.menu_button.setToolTip("Menu")  # Add tooltip
-        self.menu_button.setStyleSheet("""
-            QPushButton {
-                background-color: #404040;
-                border: none;
-                border-radius: 20px;
-                color: white;
-                font-size: 24px;
-                font-weight: bold;
-                font-family: "Segoe UI Emoji", "Apple Color Emoji", Arial, sans-serif;
-                text-align: center;
-                line-height: 40px;
-            }
-            QPushButton:hover {
-                background-color: #505050;
-            }
-            QPushButton:pressed {
-                background-color: #ff0000;
-            }
-        """)
-        self.menu_button.clicked.connect(self.show_menu)
-        details_with_menu_layout.addWidget(self.menu_button, alignment=Qt.AlignmentFlag.AlignTop)
-        
-        info_layout.addLayout(details_with_menu_layout)
+        info_layout.addLayout(details_layout)
         main_layout.addLayout(info_layout)
     
     def load_thumbnail(self):
@@ -220,9 +244,42 @@ class HistoryEntryWidget(QFrame):
         self.thumbnail_loader.start()
     
     def _on_thumbnail_loaded(self, pixmap):
-        """Handle thumbnail loaded in background."""
+        """Handle thumbnail loaded in background with original aspect ratio."""
         if hasattr(self, 'thumbnail_label') and self.thumbnail_label:
-            self.thumbnail_label.setPixmap(pixmap)
+            # Calculate scaled size maintaining aspect ratio
+            original_size = pixmap.size()
+            max_size = self.thumbnail_label.maximumSize()
+            min_size = self.thumbnail_label.minimumSize()
+            
+            # Scale to fit within max size while maintaining aspect ratio
+            scaled_size = original_size.scaled(max_size, Qt.AspectRatioMode.KeepAspectRatio)
+            
+            # Ensure minimum size
+            if scaled_size.width() < min_size.width() or scaled_size.height() < min_size.height():
+                scaled_size = original_size.scaled(min_size, Qt.AspectRatioMode.KeepAspectRatioByExpanding)
+            
+            # Set the scaled pixmap
+            scaled_pixmap = pixmap.scaled(scaled_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.thumbnail_label.setPixmap(scaled_pixmap)
+            self.thumbnail_label.setFixedSize(scaled_size)
+    
+    def _format_file_size(self, size_bytes):
+        """Format file size in human readable format."""
+        if size_bytes == 0:
+            return "0 B"
+        
+        size_names = ["B", "KB", "MB", "GB"]
+        i = 0
+        size = float(size_bytes)
+        
+        while size >= 1024.0 and i < len(size_names) - 1:
+            size /= 1024.0
+            i += 1
+        
+        if i == 0:
+            return f"{int(size)} {size_names[i]}"
+        else:
+            return f"{size:.1f} {size_names[i]}"
     
     def set_placeholder_thumbnail(self):
         """Set a placeholder when thumbnail is not available."""
@@ -237,19 +294,53 @@ class HistoryEntryWidget(QFrame):
         """)
     
     def show_menu(self):
-        """Show context menu for this entry."""
+        """Show context menu for this entry with improved styling."""
         menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #2a2a2a;
+                border: 1px solid #404040;
+                border-radius: 8px;
+                padding: 4px;
+                min-width: 180px;
+            }
+            QMenu::item {
+                background-color: transparent;
+                color: #ffffff;
+                padding: 8px 16px;
+                border-radius: 4px;
+                margin: 2px;
+            }
+            QMenu::item:selected {
+                background-color: #4a9eff;
+                color: white;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #404040;
+                margin: 4px 8px;
+            }
+        """)
         
-        delete_action = menu.addAction("Xóa khỏi lịch sử")
+        # Delete from History with icon
+        delete_action = menu.addAction("🗑️ Delete from History")
         delete_action.triggered.connect(self.delete_entry)
         
-        redownload_action = menu.addAction("Tải lại")
+        # Add separator
+        menu.addSeparator()
+        
+        # Redownload with icon
+        redownload_action = menu.addAction("⬇️ Redownload")
         redownload_action.triggered.connect(self.redownload_entry)
         
-        copy_url_action = menu.addAction("Sao chép URL")
+        # Copy URL with icon
+        copy_url_action = menu.addAction("📋 Copy URL")
         copy_url_action.triggered.connect(self.copy_url)
         
-        menu.exec(self.menu_button.mapToGlobal(self.menu_button.rect().bottomRight()))
+        # Position menu to show on the right side of the button
+        button_rect = self.menu_button.rect()
+        global_pos = self.menu_button.mapToGlobal(button_rect.topRight())
+        menu.exec(global_pos)
     
     def copy_url(self):
         """Copy URL to clipboard."""
@@ -274,7 +365,7 @@ class HistoryEntryWidget(QFrame):
             logger.info(f"Deleted history entry: {self.entry_id}")
         except Exception as e:
             logger.error(f"Error deleting entry: {e}")
-            QMessageBox.warning(self, "Lỗi", f"Không thể xóa mục: {e}")
+            QMessageBox.warning(self, "Error", f"Failed to delete entry: {e}")
     
     def redownload_entry(self):
         """Redownload this entry."""
@@ -303,7 +394,7 @@ class HistoryDialog(BaseTikTokDialog):
         header_layout = QHBoxLayout()
         
         # Title
-        title_label = QLabel("Lịch sử tải xuống")
+        title_label = QLabel("Download History")
         title_label.setStyleSheet("""
             QLabel {
                 font-size: 18px;
@@ -315,7 +406,7 @@ class HistoryDialog(BaseTikTokDialog):
         header_layout.addStretch()
         
         # Clear all button
-        clear_btn = QPushButton("Xóa toàn bộ lịch sử")
+        clear_btn = QPushButton("Clear All History")
         clear_btn.setStyleSheet("""
             QPushButton {
                 background-color: #ff4444;
@@ -336,7 +427,7 @@ class HistoryDialog(BaseTikTokDialog):
         
         # Search bar
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Tìm kiếm lịch sử...")
+        self.search_input.setPlaceholderText("Search history...")
         self.search_input.setStyleSheet("""
             QLineEdit {
                 background-color: #2a2a2a;
@@ -389,7 +480,7 @@ class HistoryDialog(BaseTikTokDialog):
         
         # Footer with download count
         footer_layout = QHBoxLayout()
-        self.count_label = QLabel("0 tải xuống")
+        self.count_label = QLabel("0 downloads")
         self.count_label.setStyleSheet("""
             QLabel {
                 color: #888888;
@@ -400,7 +491,7 @@ class HistoryDialog(BaseTikTokDialog):
         footer_layout.addStretch()
         
         # Close button
-        close_btn = QPushButton("Đóng")
+        close_btn = QPushButton("Close")
         close_btn.setFixedWidth(80)
         close_btn.setStyleSheet("""
             QPushButton {
@@ -450,7 +541,7 @@ class HistoryDialog(BaseTikTokDialog):
             if remaining_batch:
                 self.load_remaining_entries(remaining_batch)
         else:
-            no_history_label = QLabel("Chưa có lịch sử tải xuống")
+            no_history_label = QLabel("No download history yet")
             no_history_label.setStyleSheet("""
                 QLabel {
                     color: #666666;
@@ -487,7 +578,7 @@ class HistoryDialog(BaseTikTokDialog):
     def update_count(self):
         """Update the download count label."""
         count = len(self.history_entries) if hasattr(self, 'history_entries') else 0
-        self.count_label.setText(f"{count} tải xuống")
+        self.count_label.setText(f"{count} downloads")
     
     def filter_history(self, text):
         """Filter history entries based on search text."""
@@ -506,8 +597,8 @@ class HistoryDialog(BaseTikTokDialog):
         """Clear all download history."""
         reply = QMessageBox.question(
             self,
-            "Xác nhận xóa",
-            "Bạn có chắc chắn muốn xóa toàn bộ lịch sử tải xuống không?",
+            "Confirm Delete",
+            "Are you sure you want to delete all download history?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -519,4 +610,4 @@ class HistoryDialog(BaseTikTokDialog):
                 logger.info("Cleared all download history")
             except Exception as e:
                 logger.error(f"Error clearing history: {e}")
-                QMessageBox.warning(self, "Lỗi", f"Không thể xóa lịch sử: {e}")
+                QMessageBox.warning(self, "Error", f"Failed to clear history: {e}")

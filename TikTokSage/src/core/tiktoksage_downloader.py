@@ -71,6 +71,7 @@ class DownloadThread(QThread):
         self.process: Optional[subprocess.Popen] = None
         self.initial_subtitle_files: Set[Path] = set()
         self.subtitle_files: Optional[List[Path]] = None
+        self.downloaded_file_path: Optional[str] = None  # Store the actual downloaded file path
 
     def run(self) -> None:
         """Execute the download."""
@@ -138,6 +139,7 @@ class DownloadThread(QThread):
                 filepath = ydl.prepare_filename(info)
             
             logger.info(f"Download completed with yt-dlp: {filepath}")
+            self.downloaded_file_path = str(filepath)  # Store the actual file path
             self.progress_signal.emit(100.0)
             self.status_signal.emit(_("download.completed"))
             self.finished_signal.emit()
@@ -247,6 +249,9 @@ class DownloadThread(QThread):
                         if total_size > 0:
                             progress = (downloaded / total_size) * 100
                             self._update_progress(progress)
+            
+            # Store the downloaded file path
+            self.downloaded_file_path = str(output_file)
             
             # Save description if requested
             if self.save_description:

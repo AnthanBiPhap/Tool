@@ -198,7 +198,7 @@ class TikTokSageApp(QMainWindow):
         button_layout.addWidget(self.cancel_btn)
         
         # History Button
-        self.history_btn = QPushButton("Lịch sử tải xuống")
+        self.history_btn = QPushButton("Download History")
         self.history_btn.clicked.connect(self.show_history)
         button_layout.addWidget(self.history_btn)
         
@@ -511,10 +511,16 @@ class TikTokSageApp(QMainWindow):
         """Handle download finished."""
         # Add to history
         if self.video_info:
+            # Get the actual downloaded file path from the download thread
+            file_path = None
+            if hasattr(self, 'current_download') and self.current_download:
+                file_path = getattr(self.current_download, 'downloaded_file_path', None)
+            
             HistoryManager.add_entry(
                 title=self.video_info.get("title", "Unknown"),
                 url=self.url_input.text(),
                 thumbnail_url=self.video_info.get("cover", None),
+                file_path=file_path,
                 is_audio_only=self.audio_only_checkbox.isChecked(),
             )
         
