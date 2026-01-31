@@ -22,11 +22,11 @@
     "settings": "Settings"
   },
   "download": {
-    "preparing": "🚀 Preparing your download...",
-    "analyzing": "🔍 Analyzing video...",
-    "downloading": "⬇️ Downloading...",
-    "completed": "✅ Download completed!",
-    "cancelled": "❌ Download cancelled",
+    "preparing": "Preparing your download...",
+    "analyzing": "Analyzing video...",
+    "downloading": "Downloading...",
+    "completed": "Download completed!",
+    "cancelled": "Download cancelled",
     "ready": "Ready"
   },
   "errors": {

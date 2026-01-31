@@ -294,14 +294,27 @@ class TikTokSageApp(QMainWindow):
         if is_channel_url(url):
             channel_name = extract_channel_name(url)
             
-            # Show channel videos selection dialog
+            # Show immediate feedback that we're processing the channel
+            self.status_label.setText(f"Loading channel @{channel_name}...")
+            self.status_label.setStyleSheet("color: #4a9eff; font-weight: bold;")
+            
+            # Show channel videos selection dialog (it will handle loading in background)
             channel_dialog = ChannelVideosDialog(url, self)
+            
+            # Connect to loading progress
+            channel_dialog.loading_progress.connect(self.on_channel_loading_progress)
+            channel_dialog.loading_finished.connect(self.on_channel_loading_finished)
+            
             if channel_dialog.exec():
                 # Get selected URLs from dialog
                 selected_urls = channel_dialog.selected_urls
                 if selected_urls:
                     logger.info(f"Queuing {len(selected_urls)} videos for download from channel @{channel_name}")
                     self.queue_downloads(selected_urls, channel_name)
+            else:
+                # Reset status if dialog was cancelled
+                self.status_label.setText("Ready")
+                self.status_label.setStyleSheet("")
             return
         
         self.is_analyzing = True
@@ -678,6 +691,28 @@ class TikTokSageApp(QMainWindow):
             # No more videos in queue, stop and show error
             QMessageBox.critical(self, _("dialogs.error"), f"Download Error: {error}")
             self.reset_download_controls()
+
+    def on_channel_loading_progress(self, message: str) -> None:
+        """Handle channel loading progress updates."""
+        self.status_label.setText(message)
+        self.status_label.setStyleSheet("color: #4a9eff; font-weight: bold;")
+    
+    def on_channel_loading_finished(self, success: bool, video_count: int = 0) -> None:
+        """Handle channel loading completion."""
+        if success:
+            self.status_label.setText(f"Found {video_count} videos - select videos to download")
+            self.status_label.setStyleSheet("color: #4a9eff; font-weight: bold;")
+        else:
+            self.status_label.setText("Failed to load channel videos")
+            self.status_label.setStyleSheet("color: #ff4444; font-weight: bold;")
+        
+        # Reset status after 3 seconds
+        QTimer.singleShot(3000, lambda: self._reset_channel_status())
+    
+    def _reset_channel_status(self) -> None:
+        """Reset status label after channel loading."""
+        self.status_label.setText("Ready")
+        self.status_label.setStyleSheet("")
 
     def reset_download_controls(self) -> None:
         """Reset download control states."""

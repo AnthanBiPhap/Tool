@@ -22,11 +22,11 @@
     "settings": "Configuración"
   },
   "download": {
-    "preparing": "🚀 Preparando tu descarga...",
-    "analyzing": "🔍 Analizando video...",
-    "downloading": "⬇️ Descargando...",
-    "completed": "✅ ¡Descarga completada!",
-    "cancelled": "❌ Descarga cancelada",
+    "preparing": "Preparando tu descarga...",
+    "analyzing": "Analizando video...",
+    "downloading": "Descargando...",
+    "completed": "¡Descarga completada!",
+    "cancelled": "Descarga cancelada",
     "ready": "Listo"
   },
   "errors": {
